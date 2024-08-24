@@ -1,0 +1,18 @@
+{
+  "name": "splitwise",
+  "version": "1.0.0",
+  "description": "Splitwise is an app available on Android and IOS that helps users track their expenses. Users can split their expenses for trips, movies, taxis, or any other day-to-day expenses between family, roommates, and friends. Users just need to enter the expense in the system, Splitwise simplifies and tracks the overall settlement status.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-app": "ts-node -T ./src/app.ts",
+    "build": "rm -rf dist && tsc"
+  },
+  "devDependencies": {
+    "@types/node": "22.4.1",
+    "typescript": "^5.5.4",
+    "ts-node": "^10.9.2"
+  },
+  "author": "",
+  "license": "ISC"
+}

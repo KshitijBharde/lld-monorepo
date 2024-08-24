@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  phoneNumber  String?       @unique
+  createdAt    DateTime      @default(now())
+  expenses     Expense[]     @relation("UserExpenses", references: [createdBy])
+  transactions Transaction[] @relation("UserTransactions", references: [payerId])
+  auditLogs    AuditLog[]    @relation("UserAuditLogs", references: [userId])
+  GroupMember  GroupMember[]
+  Group        Group[]
+  Expense      Expense[]
+  Transaction  Transaction[]
+  AuditLog     AuditLog[]
+}
+
+model Group {
+  id           Int           @id @default(autoincrement())
+  name         String
+  createdBy    Int
+  createdAt    DateTime      @default(now())
+  GroupCreator User          @relation(fields: [createdBy], references: [id])
+  members      GroupMember[]
+  expenses     Expense[]
+}
+
+model GroupMember {
+  id       Int      @id @default(autoincrement())
+  groupId  Int
+  userId   Int
+  joinedAt DateTime @default(now())
+  Group    Group    @relation(fields: [groupId], references: [id])
+  User     User     @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model Expense {
+  id           Int         @id @default(autoincrement())
+  groupId      Int?
+  createdBy    Int
+  description  String
+  expenseType  ExpenseType
+  totalAmount  Decimal     @db.Decimal(10, 2)
+  userBalances Json        @db.JsonB
+  createdAt    DateTime    @default(now())
+
+  transactions Transaction[]
+  auditLogs    AuditLog[]
+  Group        Group         @relation(fields: [groupId], references: [id])
+  Creator      User          @relation(fields: [createdBy], references: [id])
+  userId       Int?
+  User         User?         @relation(fields: [userId], references: [id])
+}
+
+enum ExpenseType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+}
+
+model Transaction {
+  id        Int       @id @default(autoincrement())
+  expenseId Int
+  payerId   Int
+  payeeId   Int
+  amount    Decimal   @db.Decimal(10, 2)
+  settled   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  settledAt DateTime?
+  Expense   Expense   @relation(fields: [expenseId], references: [id])
+  Payer     User      @relation(fields: [payerId], references: [id])
+  Payee     User      @relation(fields: [payeeId], references: [id])
+  User      User?     @relation(fields: [userId], references: [id])
+  userId    Int?
+  User      User?     @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  action      AuditAction
+  expenseId   Int?
+  description String
+  actionAt    DateTime    @default(now())
+  User        User        @relation(fields: [userId], references: [id])
+  Expense     Expense     @relation(fields: [expenseId], references: [id])
+  User        User        @relation(fields: [userId], references: [id])
+}
+
+enum AuditAction {
+  ADD
+  EDIT
+  DELETE
+  SETTLE
+}

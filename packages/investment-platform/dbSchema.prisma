@@ -1,0 +1,101 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id                     String                  @id @default(uuid())
+    email                  String                  @unique
+    name                   String
+    wallet                 Wallet?
+    investments            Investment[]
+    walletTransactions     WalletTransaction[]
+    investmentTransactions InstrumentTransaction[]
+    createdAt              DateTime                @default(now())
+    updatedAt              DateTime                @updatedAt
+}
+
+model Wallet {
+    id           String              @id @default(uuid())
+    userId       String              @unique
+    balance      Float               @default(0.0)
+    transactions WalletTransaction[]
+    createdAt    DateTime            @default(now())
+    updatedAt    DateTime            @updatedAt
+
+    user User @relation(fields: [userId], references: [id])
+}
+
+model Instrument {
+    id           String                  @id @default(uuid())
+    name         String
+    ticker       String                  @unique // unique identifier assigned to a financial instrument e.g., Apple Inc. is AAPL, Bitcoin is BTC
+    currentPrice Float
+    investments  Investment[]
+    transactions InstrumentTransaction[]
+    createdAt    DateTime                @default(now())
+    updatedAt    DateTime                @updatedAt
+}
+
+model Investment {
+    id            String   @id @default(uuid())
+    userId        String
+    instrumentId  String
+    units         Float
+    investedValue Float // Total amount invested by the user
+    currentValue  Float // Current value based on the latest price
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    user       User       @relation(fields: [userId], references: [id])
+    instrument Instrument @relation(fields: [instrumentId], references: [id])
+
+    @@unique([userId, instrumentId]) // Ensure each user can have only one investment per instrument
+}
+
+model WalletTransaction {
+    id                 String                @id @default(uuid())
+    walletId           String
+    type               WalletTransactionType
+    amount             Float
+    walletBalanceAfter Float
+    createdAt          DateTime              @default(now())
+    userId             String
+
+    user   User   @relation(fields: [userId], references: [id])
+    wallet Wallet @relation(fields: [walletId], references: [id])
+}
+
+model InstrumentTransaction {
+    id           String                      @id @default(uuid())
+    userId       String
+    instrumentId String
+    type         InstrumentTransactionType
+    amount       Float // Amount involved in the transaction
+    units        Float // Number of units bought/sold
+    createdAt    DateTime                    @default(now())
+    status       InstrumentTransactionStatus
+    metaData     Json
+
+    user       User       @relation(fields: [userId], references: [id])
+    instrument Instrument @relation(fields: [instrumentId], references: [id])
+}
+
+enum WalletTransactionType {
+    DEPOSIT
+    WITHDRAW
+}
+
+enum InstrumentTransactionType {
+    BUY
+    SELL
+}
+
+enum InstrumentTransactionStatus {
+    COMPLETED
+    PENDING
+}
